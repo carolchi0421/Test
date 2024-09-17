@@ -1,7 +1,14 @@
 {
   "cashback": [],
   "dining": [],
+  "transportation": [],
   "overseas": [],
   "mileage": [],
-  "other": []
+  "online_shopping": [],
+  "entertainment": [],
+  "insurance": [],
+  "lifestyle": [],
+  "signup_bonus": [],
+  "annual_fee": [],
+  "installment": []
 }
