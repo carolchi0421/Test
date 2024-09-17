@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-from datetime import datetime
+import re
 
 def scrape_taishin_credit_cards():
     url = "https://www.taishinbank.com.tw/TSB/personal/credit-card/overview/"
@@ -16,7 +16,8 @@ def scrape_taishin_credit_cards():
         "cashback": [],
         "dining": [],
         "overseas": [],
-        "mileage": []
+        "mileage": [],
+        "other": []
     }
     
     card_sections = soup.find_all('div', class_='card_item')
@@ -25,15 +26,6 @@ def scrape_taishin_credit_cards():
         name = card.find('h3', class_='card_name').text.strip()
         benefits = card.find('p', class_='card_text').text.strip()
         
-        # 簡單的分類邏輯，實際應用中可能需要更複雜的分類方法
-        category = "cashback"
-        if "飲食" in benefits or "餐廳" in benefits:
-            category = "dining"
-        elif "海外" in benefits or "國外" in benefits:
-            category = "overseas"
-        elif "哩程" in benefits or "里程" in benefits:
-            category = "mileage"
-        
         card_info = {
             "name": name,
             "bank": "台新銀行",
@@ -41,13 +33,33 @@ def scrape_taishin_credit_cards():
             "rank": index
         }
         
-        credit_cards[category].append(card_info)
+        # 分類邏輯
+        if re.search(r'現金回饋|回饋金|%', benefits):
+            credit_cards["cashback"].append(card_info)
+        
+        if re.search(r'餐廳|美食|飲料|咖啡|飲食|加油|交通', benefits):
+            credit_cards["dining"].append(card_info)
+        
+        if re.search(r'國外|海外|國際', benefits):
+            credit_cards["overseas"].append(card_info)
+        
+        if re.search(r'哩程|里程|航空|飛行', benefits):
+            credit_cards["mileage"].append(card_info)
+        
+        if not any(card_info in category for category in credit_cards.values()):
+            credit_cards["other"].append(card_info)
+    
+    # 為每個類別內的卡片重新排序
+    for category in credit_cards:
+        credit_cards[category] = sorted(credit_cards[category], key=lambda x: x['rank'])
+        for i, card in enumerate(credit_cards[category], start=1):
+            card['rank'] = i
     
     # 將數據保存為 JSON 文件
-    with open('credit_card_data.json', 'w', encoding='utf-8') as f:
+    with open('taishin_credit_cards.json', 'w', encoding='utf-8') as f:
         json.dump(credit_cards, f, ensure_ascii=False, indent=2)
     
-    print("Data has been scraped and saved to credit_card_data.json")
+    print("Data has been scraped and saved to taishin_credit_cards.json")
 
 if __name__ == "__main__":
     scrape_taishin_credit_cards()
